@@ -76,10 +76,6 @@ jobs:
           docker-compose up combine-results
         continue-on-error: true
         
-      - name: Shutdown Docker Compose
-        if: always()
-        run: docker-compose down
-        
       - name: Store allure results
         uses: actions/upload-artifact@v4  
         with:
