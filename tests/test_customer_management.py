@@ -3,6 +3,8 @@ import allure
 from pages.manager_page import ManagerPage
 from utils.data_generator import DataGenerator
 from constants import DEFAULT_LAST_NAME
+from selenium.webdriver.remote.webdriver import WebDriver
+from typing import Any
 
 @allure.epic("Banking Project")
 @allure.feature("Customer Management")
@@ -12,7 +14,7 @@ class TestCustomerManagement:
     @allure.severity(allure.severity_level.CRITICAL)
     @allure.description("Test adding a new customer")
     @allure.title("Test adding a new customer")
-    def test_add_customers(self, driver):
+    def test_add_customers(self, driver: WebDriver) -> None:
         # Generate test data
         with allure.step("Generate test data"):
             post_code = DataGenerator.generate_random_post_code()
@@ -43,7 +45,7 @@ class TestCustomerManagement:
         
     @allure.description("Test adding a new customer, sorting customers by name")
     @allure.title("Test sort customers")
-    def test_sort_customers(self, driver):
+    def test_sort_customers(self, driver: WebDriver) -> None:
         # Generate test data
         with allure.step("Generate test data"):
             post_code = DataGenerator.generate_random_post_code()
@@ -81,10 +83,9 @@ class TestCustomerManagement:
             customers_page.verify_descending_sort()
     
     
-            
     @allure.description("Test adding a new customer, sorting customers by name, and deleting customers with average name length")    
     @allure.title("Delete customer")
-    def test_delete_customers(self, driver):
+    def test_delete_customers(self, driver: WebDriver) -> None:
         # Generate test data
         with allure.step("Generate test data"):
             post_code = DataGenerator.generate_random_post_code()
