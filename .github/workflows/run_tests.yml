@@ -43,10 +43,10 @@ jobs:
       - name: Run All tests
         if: github.event.inputs.deployment_target == 'All_tests' || github.event_name == 'schedule'
         run: |
-          docker-compose up prepare-allure-dirs
-          docker-compose up -d selenium-hub chrome firefox
-          docker-compose up pytest-chrome pytest-firefox
-          docker-compose up combine-results
+          docker compose up prepare-allure-dirs
+          docker compose up -d selenium-hub chrome firefox
+          docker compose up pytest-chrome pytest-firefox
+          docker compose up combine-results
         continue-on-error: true
         
       - name: Run Tests by add customer
