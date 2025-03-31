@@ -49,10 +49,10 @@ class CustomersPage(BasePage):
         first_column_data = self.get_first_column_data()
 
         name_lengths = [len(name) for name in first_column_data]
-        average_length = sum(name_lengths) / len(name_lengths) if name_lengths else 0
+        with allure.step("Calculate average name length"):
+            average_length = sum(name_lengths) / len(name_lengths) if name_lengths else 0
+            allure.attach(f"{average_length:.2f}", name="Average length", attachment_type=allure.attachment_type.TEXT)
 
-        with allure.step(f"Calculate average name length: {average_length:.2f}"):
-            pass
 
         nearest_length = min(name_lengths, key=lambda x: abs(x - average_length))
 
