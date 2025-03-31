@@ -1,0 +1,131 @@
+version: "3"
+services:
+  pytest-chrome:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - selenium-hub
+      - chrome
+    environment:
+      - SELENIUM_HUB_HOST=selenium-hub
+      - SELENIUM_HUB_PORT=4444
+      - BROWSER=chrome
+    volumes:
+      - ./:/tests
+      - ./allure-results-chrome:/tests/allure-results-chrome
+    networks:
+      - selenium-grid
+    command:
+      [
+        "sh",
+        "-c",
+        "sleep 5 && pytest -v -n ${CHROME_INSTANCES:-3} --browser chrome ${TEST_PATH:-} --alluredir=/tests/allure-results-chrome",
+      ]
+
+  pytest-firefox:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - selenium-hub
+      - firefox
+    environment:
+      - SELENIUM_HUB_HOST=selenium-hub
+      - SELENIUM_HUB_PORT=4444
+      - BROWSER=firefox
+    volumes:
+      - ./:/tests
+      - ./allure-results-firefox:/tests/allure-results-firefox
+    networks:
+      - selenium-grid
+    command:
+      [
+        "sh",
+        "-c",
+        "sleep 5 && pytest -v -n ${FIREFOX_INSTANCES:-3} --browser firefox ${TEST_PATH:-} --alluredir=/tests/allure-results-firefox",
+      ]
+
+  selenium-hub:
+    image: selenium/hub:4.8.3
+    container_name: selenium-hub
+    ports:
+      - "4442:4442"
+      - "4443:4443"
+      - "4444:4444"
+    networks:
+      - selenium-grid
+
+  chrome:
+    image: selenium/node-chrome:4.8.3
+    shm_size: 2gb
+    depends_on:
+      - selenium-hub
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+      - SE_NODE_MAX_SESSIONS=5
+      - SE_NODE_OVERRIDE_MAX_SESSIONS=true
+    networks:
+      - selenium-grid
+
+  firefox:
+    image: selenium/node-firefox:4.8.3
+    shm_size: 2gb
+    depends_on:
+      - selenium-hub
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+      - SE_NODE_MAX_SESSIONS=5
+      - SE_NODE_OVERRIDE_MAX_SESSIONS=true
+    networks:
+      - selenium-grid
+
+  prepare-allure-dirs:
+    image: alpine
+    volumes:
+      - ./allure-results-chrome:/allure-results-chrome
+      - ./allure-results-firefox:/allure-results-firefox
+      - ./allure-results:/allure-results
+    command: >
+      sh -c "mkdir -p /allure-results-chrome && 
+             mkdir -p /allure-results-firefox &&
+             mkdir -p /allure-results &&
+             chmod -R 777 /allure-results-chrome &&
+             chmod -R 777 /allure-results-firefox &&
+             chmod -R 777 /allure-results"
+
+  combine-results:
+    image: alpine
+    depends_on:
+      - pytest-chrome
+      - pytest-firefox
+      - prepare-allure-dirs
+    volumes:
+      - ./allure-results-chrome:/allure-results-chrome
+      - ./allure-results-firefox:/allure-results-firefox
+      - ./allure-results:/allure-results
+    command: >
+      sh -c "cp -rf /allure-results-chrome/* /allure-results/ && 
+             cp -rf /allure-results-firefox/* /allure-results/"
+
+  allure:
+    image: frankescobar/allure-docker-service
+    user: root
+    depends_on:
+      - combine-results
+    environment:
+      - CHECK_RESULTS_EVERY_SECONDS=3
+      - KEEP_HISTORY=1
+    ports:
+      - "5050:5050"
+    volumes:
+      - ./allure-results:/app/allure-results
+    networks:
+      - selenium-grid
+
+networks:
+  selenium-grid:
